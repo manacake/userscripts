@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Line Emoji Downloader
-// @version      1.0.0
+// @version      1.1.0
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  Downloads the page's emojis in a .zip file
@@ -16,15 +16,19 @@
 // @noframes
 // ==/UserScript==
 
+/* global JSZip, saveAs */
+
 (async function() {
   'use strict';
 
   const ul = document.querySelector('ul.FnEmoji_animation_list_img');
   const emojiContainers = ul.querySelectorAll('div.FnImage span');
   const emojiNameContainer = document.querySelector('p[data-test="emoji-name-title"]');
-  const emojiName = emojiNameContainer.textContent || 'emojis';
+  const emojiName = emojiNameContainer.textContent || 'Emojis';
   const emojiNameNoSpaces = emojiName.replace(/\s/g, '_');
-  const emojiUrls = [];
+  const isAnimated = !!document.querySelector('div[ref="mainImage"]').querySelector('span[data-test="animation-sticon-icon"]');
+  const emojiUrlsStatic = [];
+  const emojiUrlsAnimated = [];
 
   // Gather emoji urls
   for (let i = 0; i < emojiContainers.length; i++) {
@@ -33,46 +37,81 @@
     // Match url without query parameter
     const possibleMatch = rawStyle.match(/url\(([^?)]+)/);
     if (possibleMatch) {
-      emojiUrls.push(possibleMatch[1]);
+      emojiUrlsStatic.push(possibleMatch[1]);
+      if (isAnimated) {
+        emojiUrlsAnimated.push(possibleMatch[1].replace(/(.png)/, '_animation$1'));
+      }
     }
   }
 
-  // Helper used to download the gathered emoji urls and zip them up
-  async function downloadAndZip() {
+  /**
+   * Helper used to download the gathered emoji urls and zip them up
+   * @param {string} type - can be either STATIC, ANIMATED, OR ALL
+   */
+  async function downloadAndZip(type) {
+    if (type !== 'STATIC' && type !== 'ANIMATED' && type !== 'ALL') return;
+    if (!isAnimated && type === 'ANIMATED') return;
+
+    const folderName = `${emojiNameNoSpaces}_${isAnimated ? type : 'STATIC'}`;
     const zip = new JSZip();
-    const folder = zip.folder(emojiNameNoSpaces);
-    console.log('[Line emoji downloader] Starting emoji downloads...')
-    const downloadPromises = emojiUrls.map(async (url, index) => {
+    const folder = zip.folder(folderName);
+    const readmeContent = `# ${emojiName}\n\nDownloaded from: ${window.location.href}`;
+    folder.file('source.md', readmeContent);
+
+    const emojiUrls = (function() {
+      switch (type) {
+        case 'STATIC':
+          return [...emojiUrlsStatic];
+        case 'ANIMATED':
+          return [...emojiUrlsAnimated];
+        default:
+          return [...emojiUrlsStatic, ...emojiUrlsAnimated];
+      }
+    })();
+    console.log('[Line Emoji Downloader] Starting emoji downloads...');
+    const downloadPromises = emojiUrls.map(async (url) => {
       try {
         const response = await fetch(url);
         const blob = await response.blob();
-        // Extract filename from URL or create one
-        const fileName = url.split('/').pop() || `emoji_${index}.png`;
+        const fileName = url.split('/').pop();
         folder.file(fileName, blob);
-        console.log(`[Line emoji downloader] Added ${fileName} to zip`);
       } catch (err) {
-        console.error(`[Line emoji downloader] Failed to download ${url}`, err);
+        console.error(`[Line Emoji Downloader] Failed to download ${url}`, err);
       }
     });
 
     await Promise.all(downloadPromises);
     // Generate and save the zip
     zip.generateAsync({type: 'blob'}).then(function(content) {
-      saveAs(content, `${emojiNameNoSpaces}.zip`);
-      console.log('[Line emoji downloader] Download complete!');
+      saveAs(content, `${folderName}.zip`);
+      console.log('[Line Emoji Downloader] Download complete!');
     });
   }
 
-  // Add a button to start the download process
-  const btn = document.createElement('button');
-  btn.innerHTML = 'Download All Emojis';
-  btn.style.display = 'block';
-  btn.style.padding = '15px';
-  btn.style.background = '#00b84f';
-  btn.style.color = '#FFF';
-  btn.style.fontWeight = 'bold';
-  btn.style.fontSize = '15px';
-  btn.style.marginBottom = '12px';
-  btn.onclick = downloadAndZip;
-  emojiNameContainer.after(btn);
+  // Add buttons that start download process (and differentiate download types)
+  const buttonContainer = document.createElement('div');
+  const buttonAll = document.createElement('button');
+  const buttonStatic = document.createElement('button');
+  buttonStatic.setAttribute('style', 'background:#454545; color:#FFF; padding:8px; font-weight:bold; cursor:pointer;');
+  const buttonAnimated = buttonStatic.cloneNode(false);
+  const sideButtonContainer = buttonContainer.cloneNode(false);
+
+  buttonContainer.setAttribute('style', 'display:flex; gap:5px; margin-bottom:10px;');
+  sideButtonContainer.setAttribute('style', 'display:flex; flex-direction:column; align-items:flex-start; gap:5px;');
+  buttonAll.setAttribute('style', 'display:block; padding:15px; background:#00B84F; color:#FFF; font-weight:bold; font-size:15px; cursor:pointer;');
+
+  buttonAll.innerHTML = 'Download all emojis';
+  buttonStatic.innerHTML = 'Download only static emojis';
+  buttonAnimated.innerHTML = 'Download only animated emojis';
+  buttonAll.onclick = () => downloadAndZip('ALL');
+  buttonStatic.onclick = () => downloadAndZip('STATIC');
+  buttonAnimated.onclick = () => downloadAndZip('ANIMATED');
+
+  buttonContainer.appendChild(buttonAll);
+  if (isAnimated) {
+    sideButtonContainer.appendChild(buttonStatic);
+    sideButtonContainer.appendChild(buttonAnimated);
+    buttonContainer.appendChild(sideButtonContainer);
+  }
+  emojiNameContainer.after(buttonContainer);
 })();

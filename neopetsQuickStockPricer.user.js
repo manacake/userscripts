@@ -6,6 +6,8 @@
 // @description  For use on the user's quick stock page: queries the latest price of an item and displays it so the user can pick the appropriate action.
 // @license      CC-BY-NC-4.0
 // @website      https://manacake.co
+// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/neopetsQuickStockPricer.user.js
+// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/neopetsQuickStockPricer.user.js
 // @match        *://*.neopets.com/quickstock.phtml*
 // @icon         https://manacake.co/favicon.ico
 // @grant        GM_xmlhttpRequest

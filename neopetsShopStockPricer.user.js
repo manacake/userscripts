@@ -6,6 +6,8 @@
 // @description  For use on the user's shop stock page: queries the latest price of an item and displays it so the user can adjust their prices accordingly.
 // @license      CC-BY-NC-4.0
 // @website      https://manacake.co
+// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/neopetsShopStockPricer.user.js
+// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/neopetsShopStockPricer.user.js
 // @match        *://*.neopets.com/market.phtml*
 // @icon         https://manacake.co/favicon.ico
 // @grant        GM_xmlhttpRequest

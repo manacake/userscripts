@@ -6,6 +6,8 @@
 // @description  Downloads the page's emojis in a .zip file
 // @license      CC-BY-NC-4.0
 // @website      https://manacake.co
+// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/lineEmojiDownloader.user.js
+// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/lineEmojiDownloader.user.js
 // @match        *://store.line.me/emojishop/product/*/en
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js

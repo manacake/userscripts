@@ -1,5 +1,5 @@
 # Manacake.co's Userscripts (´･ᴗ･ ` )
-I wrote some userscripts for improving my experience consuming web content. My scripts cover the topics below. Feel free to peruse any that may interest you. Maybe my scripts will inspire and help you write your own as well?
+I wrote some userscripts for improving my experience consuming web content. My scripts cover the topics below. Feel free to peruse and install any that may interest you. Maybe my scripts will inspire and help you write your own as well?
 
 ### Userscript topics
 * [Line Store](#line-store)
@@ -22,7 +22,22 @@ I wanted to access the emojis I have already purchased so I can use them in othe
 
 To browse available emojis, see [Line Store's emoji catalog](https://store.line.me/emojishop/home/general/en).
 
-![Quick Stock Pricer](screenshots/lineEmojiDownloader.png)
+![Line Emoji Downloader](screenshots/lineEmojiDownloader.png)
+
+### Line Sticker Downloader
+
+<a href="https://raw.githubusercontent.com/manacake/userscripts/main/lineStickerDownloader.user.js" target="_blank"><button style="padding:16px; background:#00B84F; color:#FFF; font-weight:bold; border:0; cursor:pointer;">Install Line Sticker Downloader</button></a>
+
+Similarly to the Line emoji issue I had, I also wanted the option to download stickers and sticker-packs that I have previously purchased. I did notice that there was an existing .zip endpoint floating around that served this purpose with one big caveat:
+
+> [!IMPORTANT]
+> Due to the endpoint not having a valid secure protocol, there is a possibility that the download might not complete properly without manual intervention. Usually, modern browsers will halt the .zip download because the Line sticker page is served over HTTPS while the download is served over HTTP. In order to follow through, you must click [Allow Download] manually by checking your browser's downloads UI.
+
+This works *just fine* albeit a little janky. (￣▽￣*)ゞ I also presume the same technique found in my Line emoji downloader would work on Line stickers as well (with some retrofitting adjustments, but that's for a future edit).
+
+To browse available stickers, see [Line Store's sticker catalog](https://store.line.me/stickershop/home/general/en).
+
+![Line Sticker Downloader](screenshots/lineStickerDownloader.png)
 
 ## Neopets
 
@@ -40,7 +55,7 @@ I wanted to see the latest NP pricing value of each item on my quick stock page 
 
 I never know what value to price the items in my shop. Now with this helper, you can see a quick glance of the latest NP pricing value for the specific item in your store so you can price accordingly. This script uses data from the [itemdb API](https://itemdb.com.br/).
 
-![Quick Stock Pricer](screenshots/neopetsShopStock.png)
+![Shop Stock Pricer](screenshots/neopetsShopStock.png)
 
 ## License & Terms of Use (｡•̀ᴗ-)✧
 By using my userscript(s), you agree to the terms of the [CC-BY-NC-4.0](https://creativecommons.org/licenses/by-nc/4.0/) license. Feel free to tinker, adapt to your own work, and share, but please keep it non-commercial and give credit back to [manacake.co](https://manacake.co/). Thank you!

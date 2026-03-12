@@ -20,6 +20,8 @@ There is a popular browser extension called [Tampermonkey](https://www.tampermon
 
 I wanted to access the emojis I have already purchased so I can use them in other places in my personal life (e.g. digital note-keeping, external chat programs, etc.) For the animated emojis, I made the option to download either (a) the static versions of the animations or (b) the animated versions or (c) both types (static and animated)! For static-only emojis, there is specifically only one download button. Please support your artists and purchase their work before downloading... unless it was ai generated in which case, download at will because to hell with ai slop.
 
+To browse available emojis, see [Line Store's emoji catalog](https://store.line.me/emojishop/home/general/en).
+
 ![Quick Stock Pricer](screenshots/lineEmojiDownloader.png)
 
 ## Neopets

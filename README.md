@@ -31,7 +31,7 @@ To browse available emojis, see [Line Store's emoji catalog](https://store.line.
 Similarly to the Line emoji issue I had, I also wanted the option to download stickers and sticker-packs that I have previously purchased. I did notice that there was an existing .zip endpoint floating around that served this purpose with one big caveat:
 
 > [!IMPORTANT]
-> Due to the endpoint not having a valid secure protocol, there is a possibility that the download might not complete properly without manual intervention. Usually, modern browsers will halt the .zip download because the Line sticker page is served over HTTPS while the download is served over HTTP. In order to follow through, you must click [Allow Download] manually by checking your browser's downloads UI.
+> Due to the endpoint not having a valid secure protocol, there is a possibility that the download might not complete properly without manual intervention. Usually, modern browsers will halt the .zip download because the Line sticker page is served over HTTPS while the download is served over HTTP. In order to follow through, you must click [Allow Download] manually by checking your browser's downloads UI. Also, if the .zip gets corrupted somehow, try downloading in a different browser.
 
 This works *just fine* albeit a little janky. (￣▽￣*)ゞ I also presume the same technique found in my Line emoji downloader would work on Line stickers as well (with some retrofitting adjustments, but that's for a future edit).
 

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Line Emoji Downloader
-// @version      1.1.0
+// @version      1.1.1
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  Downloads the page's emojis in a .zip file
@@ -8,7 +8,7 @@
 // @website      https://manacake.co
 // @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/lineEmojiDownloader.user.js
 // @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/lineEmojiDownloader.user.js
-// @match        *://store.line.me/emojishop/product/*/en
+// @match        *://store.line.me/emojishop/product/*/en*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
 // @icon         https://manacake.co/favicon.ico

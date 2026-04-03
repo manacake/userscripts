@@ -1,4 +1,6 @@
 # Manacake.co's Userscripts (´･ᴗ･ ` )
+<a href="https://ko-fi.com/manacake" target="_blank"><img src="kofiButton.png" style="max-width:200px;" alt="Support me on Ko-fi" /></a>
+
 I wrote some userscripts for improving my experience consuming web content. My scripts cover the topics below. Feel free to peruse and install any that may interest you. Maybe my scripts will inspire and help you write your own as well?
 
 ### Userscript topics

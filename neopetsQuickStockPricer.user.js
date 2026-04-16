@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Neopets Quick Stock Pricer
-// @version      1.1.0
+// @version      2.0.0
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  For use on the user's quick stock page: queries the latest price of an item and displays it so the user can pick the appropriate action.
@@ -17,11 +17,13 @@
 
 (async function() {
   'use strict';
-  // Helper to fetch item price from itemdb's API
-  // Note: When using fetch(), the API is not allowed to return "Access-Control-Allow-Origin: *"
-  // but itemdb does and this causes an error in the browser's eyes.
-  // Using GM_xmlhttpRequest will run the context of the extension and not neopets.com which will
-  // allow it to ignore CORS headers entirely.
+  /**
+   * Helper to fetch item price from itemdb's API
+   * Note: When using fetch(), the API is not allowed to return "Access-Control-Allow-Origin: *"
+   * but itemdb does and this causes an error in the browser's eyes.
+   * Using GM_xmlhttpRequest will run the context of the extension and not neopets.com which will
+   * allow it to ignore CORS headers entirely.
+   */
   const fetchItemPriceHistory = async (names) => {
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
@@ -40,55 +42,87 @@
           }
         },
         onerror: function(error) {
-          console.error('Cannot fetch item prices', error);
+          console.error('[quick stock pricer] cannot fetch item prices', error);
           reject(error);
         }
       });
     });
   }
 
-  const table = document.querySelector('form[name="quickstock"] table');
-  const rows = table.querySelectorAll('tr');
-  const names = [];
-  // Grab item names to fetch price check
-  for (let i = 1; i < rows.length - 3; i++) {
-    const row = rows[i];
-    const rowBgColor = row.getAttribute('bgColor');
-    if (rowBgColor !== '#EEEEBB' // header
-      && rowBgColor !== '#ffffff' // divider between NP and NC items
-      && rowBgColor !== '#85ffcb' // NC item
-    ) {
-      const itemCell = row.querySelector('td[align="left"]');
-      const itemName = itemCell.textContent;
-      if (!names.includes(itemName)) names.push(itemName);
+  const applyItemPricing = async () => {
+    const tbody = document.querySelector('form table.quickstock-table tbody.np-table-tbody');
+    const isPricedAlready = !!tbody.querySelector('.item-price');
+    // Ignore pages that have pricing already
+    if (isPricedAlready) {
+      return;
     }
-  }
 
-  try {
-    const data = await fetchItemPriceHistory(names);
-
-    // Update the item rows to include historical pricing
-    for (let i = 1; i < rows.length - 3; i++) {
+    const rows = tbody.querySelectorAll('tr');
+    const names = [];
+    // Grab item names to fetch price check
+    for (let i = 0; i < rows.length - 1; i++) {
       const row = rows[i];
-      const rowBgColor = row.getAttribute('bgColor');
-      if (rowBgColor !== '#EEEEBB' // header
-        && rowBgColor !== '#ffffff' // divider between NP and NC items
-        && rowBgColor !== '#85ffcb' // NC item
+      const style = window.getComputedStyle(row);
+      const rowBgColor = style.backgroundColor;
+
+      if (rowBgColor !== 'rgb(253, 230, 138)' // check all row
+        && rowBgColor !== 'rgb(167, 243, 208)' // NC item
+        && rowBgColor !== 'rgb(209, 250, 229)' // NC item
       ) {
-        const itemCell = row.querySelector('td[align="left"]');
+        const itemCell = row.querySelector('td span');
         const itemName = itemCell.textContent;
-        const isInflated = data[itemName]?.price.inflated;
-        const itemPrice = data[itemName]?.price.value;
-        const styleAttr = isInflated ? 'style="color: red;"' : '';
-        itemCell.innerHTML = `
-          <div style="display: flex; justify-content: space-between; width: 100%;">
-            <span>${itemName}</span>
-            <span ${styleAttr}><b>${itemPrice ?? '??'}</b></span>
-          </div>
-        `;
+        /**
+         * There is a possibility that the itemName will not exist because
+         * the row is a divider row and it shares a bg color of #FFFFFF
+         * with a valid item row so we need to parse out the divider row
+         */
+        if (itemName !== ' ' && !names.includes(itemName)) {
+          names.push(itemName);
+        }
       }
     }
-  } catch (error) {
-    console.error("Failed to update shop prices:", error);
+
+    try {
+      const data = await fetchItemPriceHistory(names);
+      // Update the item rows to include historical pricing
+      for (let i = 0; i < rows.length - 1; i++) {
+        const row = rows[i];
+        const style = window.getComputedStyle(row);
+        const rowBgColor = style.backgroundColor;
+
+        if (rowBgColor !== 'rgb(253, 230, 138)' // check all row
+          && rowBgColor !== 'rgb(167, 243, 208)' // NC item
+          && rowBgColor !== 'rgb(209, 250, 229)' // NC item
+        ) {
+          const itemCell = row.querySelector('td');
+          const itemName = itemCell.querySelector('span').textContent;
+          if (itemName !== ' ') {
+            const isInflated = data[itemName]?.price.inflated;
+            const itemPrice = data[itemName]?.price.value;
+            itemCell.className += ' flex justify-between';
+
+            const spanPrice = document.createElement('span');
+            spanPrice.textContent = itemPrice;
+            spanPrice.className = `item-price font-bold ${isInflated ? 'text-red-500' : ''}`;
+
+            itemCell.append(spanPrice);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("[quick stock pricer] failed to update shop prices:", error);
+    }
   }
+
+  /**
+   * Every time the page changes, the table rows also change so we need
+   * a way to update the pricing for each row upon page change
+   */
+  const paginationControls = document.querySelector('.np-pagination-controls');
+  paginationControls.addEventListener('click', async function(_event) {
+    await applyItemPricing();
+  });
+
+  // Run on first page load
+  await applyItemPricing();
 })();

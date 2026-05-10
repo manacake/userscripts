@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Line Sticker Downloader
-// @version      1.0.1
+// @version      1.0.2
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  Downloads the page's stickers in a .zip file
@@ -18,7 +18,10 @@
   'use strict';
 
   const stickerNameContainer = document.querySelector('p[data-test="sticker-name-title"]');
-  const isAnimated = !!document.querySelector('div[ref="mainImage"]').querySelector('span[data-test="animation-sticker-icon"]');
+  const mainImage = document.querySelector('div[ref="mainImage"]');
+  const hasAnimationIndicator = mainImage.querySelector('span[data-test="animation-sticker-icon"]');
+  const hasPopupIndicator = mainImage.querySelector('span[data-test="popup-sticker-icon"]');
+  const isAnimated = !!(hasAnimationIndicator || hasPopupIndicator);
   /**
    * Due to the endpoint not having a valid secure protocol, there is a possibility that the download might not complete properly without manual intervention. Usually, modern browsers will stop the .zip download because the current document is served over https while the download is served over http. In order to follow through, you must click [Allow download] manually by checking your browser's downloads UI. Also, if the .zip gets corrupted somehow, try downloading in a different browser. (You can peek the download URL in the console)
    */

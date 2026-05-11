@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Neopets Quick Stock Pricer
-// @version      3.0.0
+// @version      4.0.0
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  For use on the user's quick stock page: queries the latest price of an item and displays it
@@ -25,6 +25,27 @@
     if (DEBUG) {
       console.log(...args);
     }
+  }
+
+  // Helper to wait for page elements to be hydrated
+  const waitForElement = (selector) => {
+    return new Promise((resolve) => {
+      const element = document.querySelector(selector);
+      if (element) {
+        log(`[quick stock pricer] found element (${selector}) at page load`);
+        return resolve(element);
+      }
+
+      const observer = new MutationObserver(() => {
+        const element = document.querySelector(selector);
+        if (element) {
+          log(`[quick stock pricer] found element (${selector}) after mutation`);
+          observer.disconnect();
+          resolve(element);
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
   }
 
   /**
@@ -59,28 +80,28 @@
     });
   }
 
-  const gatherItemNames = () => {
-    const tbody = document.querySelector('form table.quickstock-table tbody.np-table-tbody');
-    const rows = tbody.querySelectorAll('tr');
-
-    for (let i = 0; i < rows.length - 1; i++) {
-      const row = rows[i];
-      const style = window.getComputedStyle(row);
-      const rowBgColor = style.backgroundColor;
-      // Exclude certain rows that don't have a NP value
-      if (rowBgColor !== 'rgb(253, 230, 138)' // check all row
-        && rowBgColor !== 'rgb(167, 243, 208)' // NC item
-        && rowBgColor !== 'rgb(209, 250, 229)' // NC item
-      ) {
-        const itemCell = row.querySelector('td span');
-        // Harvests text content from the first span
-        const itemName = itemCell.childNodes[0].textContent.trim();
-        if (itemName && itemName !== ' ' && !itemNames.includes(itemName)) {
-          itemNames.push(itemName);
+  const gatherItemNames = async () => {
+    await waitForElement('form table.quickstock-table tbody.np-table-tbody').then((tbody) => {
+      const rows = tbody.querySelectorAll('tr');
+      for (let i = 0; i < rows.length - 1; i++) {
+        const row = rows[i];
+        const style = window.getComputedStyle(row);
+        const rowBgColor = style.backgroundColor;
+        // Exclude certain rows that don't have a NP value
+        if (rowBgColor !== 'rgb(253, 230, 138)' // check all row
+          && rowBgColor !== 'rgb(167, 243, 208)' // NC item
+          && rowBgColor !== 'rgb(209, 250, 229)' // NC item
+        ) {
+          const itemCell = row.querySelector('td span');
+          // Harvests text content from the first span
+          const itemName = itemCell.childNodes[0].textContent.trim();
+          if (itemName && itemName !== ' ' && !itemNames.includes(itemName)) {
+            itemNames.push(itemName);
+          }
         }
       }
-    }
-    log('[quick stock pricer] item names gathered so far', itemNames);
+      log('[quick stock pricer] item names gathered so far', itemNames);
+    });
   }
 
   /**
@@ -95,7 +116,7 @@
       // do the item name scan and fetch pricing otherwise we can assume we have all the
       // items in which we need to fetch data
       if (itemNames.length === 0 || itemNames.length !== Object.keys(itemData).length) {
-        gatherItemNames();
+        await gatherItemNames();
         const responseData = await fetchItemPriceHistory(itemNames);
         itemData = { ...itemData, ...responseData };
         log('[quick stock pricer] item data', itemData);
@@ -103,41 +124,45 @@
       
       // Since the table rows are constantly erasing item pricing due to organization actions:
       // pagination, stacking, etc. We should apply the item data we have to the new table view
-      const tbody = document.querySelector('form table.quickstock-table tbody.np-table-tbody');
-      const rows = tbody.querySelectorAll('tr');
-      // Target rows without pricing and apply our existing data to those affected rows:
-      const rowsWithoutPrice = Array.from(rows).filter(row => !row.querySelector('.item-price'));
-      // Bug: sometimes rowsWithoutPrice returns incorrect amount of rows because of race condition
-      // the rows get added after a value change with select#qs-per-page-select
-      log('[quick stock pricing] apply item pricing', rowsWithoutPrice);
+      waitForElement('form table.quickstock-table tbody.np-table-tbody').then((tbody) => {
+        const rows = tbody.querySelectorAll('tr');
+        log('[quick stock pricer] row length', rows.length);
+        // Target rows without pricing and apply our existing data to those affected rows:
+        const rowsWithoutPrice = Array.from(rows).filter(row => !row.querySelector('.item-price'));
+        // Bug: sometimes rowsWithoutPrice returns incorrect amount of rows because of race condition
+        // the rows get added after a value change with select#qs-per-page-select
+        log('[quick stock pricing] apply item pricing to rows w/o price', rowsWithoutPrice);
 
-      for (let i = 0; i < rowsWithoutPrice.length - 1; i++) {
-        const row = rowsWithoutPrice[i];
-        const style = window.getComputedStyle(row);
-        const rowBgColor = style.backgroundColor;
-        // Exclude certain rows that don't have a NP value
-        if (rowBgColor !== 'rgb(253, 230, 138)' // check all row
-          && rowBgColor !== 'rgb(167, 243, 208)' // NC item
-          && rowBgColor !== 'rgb(209, 250, 229)' // NC item
-        ) {
-          const itemCell = row.querySelector('td');
-          const span = itemCell.querySelector('span');
-          const itemName = span.childNodes[0].textContent.trim();
+        for (let i = 0; i < rowsWithoutPrice.length - 1; i++) {
+          const row = rowsWithoutPrice[i];
+          const style = window.getComputedStyle(row);
+          const rowBgColor = style.backgroundColor;
+          // Exclude certain rows that don't have a NP value
+          if (rowBgColor !== 'rgb(253, 230, 138)' // check all row
+            && rowBgColor !== 'rgb(167, 243, 208)' // NC item
+            && rowBgColor !== 'rgb(209, 250, 229)' // NC item
+          ) {
+            const itemCell = row.querySelector('td');
+            const span = itemCell.querySelector('span');
+            const itemName = span.childNodes[0].textContent.trim();
 
-          if (itemName && itemName !== ' ') {
-            const isInflated = itemData[itemName]?.price.inflated;
-            const itemPrice = itemData[itemName]?.price.value;
+            if (itemName && itemName !== ' ') {
+              const isInflated = itemData[itemName]?.price.inflated;
+              const itemPrice = itemData[itemName]?.price.value;
 
-            if (itemPrice) {
-              itemCell.className += ' flex justify-between';
-              const spanPrice = document.createElement('span');
-              spanPrice.textContent = itemPrice;
-              spanPrice.className = `item-price font-bold ${isInflated ? 'text-red-500' : ''}`;
-              itemCell.append(spanPrice);
+              if (itemPrice) {
+                itemCell.className += ' flex justify-between';
+                const spanPrice = document.createElement('span');
+                spanPrice.textContent = itemPrice;
+                spanPrice.className = `item-price font-bold ${isInflated ? 'text-red-500' : ''}`;
+                itemCell.append(spanPrice);
+              }
             }
           }
         }
-      }
+        addPriceHistoryHeader('.np-table-container');
+        addPriceHistoryHeader('.quickstock-thead-clone');
+      });
     } catch (error) {
       console.error('[quick stock pricer] failed to update prices', error);
     }
@@ -147,26 +172,31 @@
     const container = document.querySelector(selector);
     const thead = container.querySelector('thead.np-table-thead.quickstock-thead');
     const tableHeader = thead.querySelector('th');
-    tableHeader.className += ' relative';
-    const spanTableHeader = document.createElement('span');
-    spanTableHeader.textContent = 'Price History';
-    spanTableHeader.className = 'absolute right-3';
-    tableHeader.append(spanTableHeader);
+    const hasPriceHistoryHeader = !!tableHeader.querySelector('.th-price-history');
+    if (!hasPriceHistoryHeader) {
+      tableHeader.className += ' relative';
+      const spanTableHeader = document.createElement('span');
+      spanTableHeader.textContent = 'Price History';
+      spanTableHeader.className = 'th-price-history absolute right-3';
+      tableHeader.append(spanTableHeader);
+    }
   }
 
   // When the NP/NC toggle is clicked, the table will be wiped of price data so we need to reapply pricing
-  const npToggle = document.querySelector('.nptoggle');
-  npToggle.addEventListener('click', async (_event) => {
-    await applyItemPricing();
+  waitForElement('.nptoggle').then((npToggle) => {
+    npToggle.addEventListener('click', async () => {
+      await applyItemPricing();
+    });
   });
 
   /**
    * The sorting toggle A-Z usually won't be needed except when pagination shows multiple pages in
    * which case sorting will erase existing pricing data and will need to be reapplied
    */
-  const sortToggle = document.querySelector('.filtertoggle');
-  sortToggle.addEventListener('click', async (_event) => {
-    await applyItemPricing();
+  waitForElement('.filtertoggle').then((sortToggle) => {
+    sortToggle.addEventListener('click', async () => {
+      await applyItemPricing();
+    });
   });
 
   /**
@@ -175,9 +205,10 @@
    * b. there will be extra row(s) with said item quantity
    * Either way, we need to update the missing prices when we go from stacked -> unstacked
    */
-  const stackToggle = document.querySelector('.stacktoggle');
-  stackToggle.addEventListener('click', async (_event) => {
-    await applyItemPricing();
+  waitForElement('.stacktoggle').then((stackToggle) => {
+    stackToggle.addEventListener('click', async () => {
+      await applyItemPricing();
+    });
   });
 
   /**
@@ -185,7 +216,7 @@
    * Every time the page changes, the table rows will erase price data so we need to reapply pricing
    */
   let paginationAbortController = null;
-  const waitForElement = (selector, callback) => {
+  const waitForPaginationElement = (selector, callback, onRemoved) => {
     let lastSeenElement = null;
     const observer = new MutationObserver((_mutations) => {
       const element = document.querySelector(selector);
@@ -194,47 +225,45 @@
         lastSeenElement = element;
         callback(element);
       }
+      else if (!element && lastSeenElement) {
+        lastSeenElement = null;
+        if (onRemoved) onRemoved();
+      }
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  const select = document.querySelector('#qs-per-page-select');
-  select.addEventListener('change', (_event) => {
-    log('[quick stock pricer] changed items per page');
-    const tbody = document.querySelector('form table.quickstock-table tbody.np-table-tbody');
-    // Since the change event will fire before the page's JS has finished re-rendering the rows,
-    // we should add a debounced mutation observer on tbody so we know when the DOM settles
-    let debounceTimer;
-    const observer = new MutationObserver((_mutations) => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(async () => {
-        observer.disconnect();
-        await applyItemPricing();
-      }, 50); // 50ms handles cases where the page mutates tbody in multiple batches
-    });
-    observer.observe(tbody, { childList: true, subtree: true });
+  waitForElement('#qs-per-page-select').then((select) => {
+    select.addEventListener('change', async () => {
+      log('[quick stock pricer] changed items per page');
 
-    waitForElement('.np-pagination-controls', (paginationControls) => {
-      log('[quick stock pricer] found pagination controls');
-      // Cancel previous listener if pagination was reinserted
-      if (paginationAbortController) {
-        paginationAbortController.abort();
-      }
-      paginationAbortController = new AbortController();
+      waitForPaginationElement('.np-pagination-controls', async (paginationControls) => {
+        // Cancel previous listener if pagination was reinserted
+        if (paginationAbortController) {
+          paginationAbortController.abort();
+        }
+        paginationAbortController = new AbortController();
 
-      // Every time pagination controls gets re-inserted, attach new listener
-      paginationControls.addEventListener('click', async (_event) => {
+        // Every time pagination controls gets re-inserted, attach new listener
+        paginationControls.addEventListener('click', async (_event) => {
+          await applyItemPricing();
+          // Pass an abort controller signal to this event listener.
+          // When .abort() is called on the controller, this listener will be auto removed
+          // This helps in preventing duplicate listeners on the same element~
+        }, { signal: paginationAbortController.signal });
+
+        // After pagination controls are visible, attempt to update pricing for all rows
+        log('[quick stock pricer] found pagination controls, call applyItemPricing()');
         await applyItemPricing();
-        // Pass an abort controller signal to this event listener.
-        // When .abort() is called on the controller, this listener will be auto removed
-        // This helps in preventing duplicate listeners on the same element~
-      }, { signal: paginationAbortController.signal });
+      },
+      // onRemoved callback
+      async () => {
+        log('[quick stock pricer] pagination controls removed, call applyItemPricing()');
+        await applyItemPricing();
+      });
     });
   });
-  // End pagination controls block
 
   // Run on first page load
   await applyItemPricing();
-  addPriceHistoryHeader('.np-table-container');
-  addPriceHistoryHeader('.quickstock-thead-clone');
 })();

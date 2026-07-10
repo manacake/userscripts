@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Neopets Quick Stock Pricer
-// @version      4.0.0
+// @version      4.1.0
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  For use on the user's quick stock page: queries the latest price of an item and displays it
@@ -216,7 +216,7 @@
    * Every time the page changes, the table rows will erase price data so we need to reapply pricing
    */
   let paginationAbortController = null;
-  const waitForPaginationElement = (selector, callback, onRemoved) => {
+  const waitForDomElement = (selector, callback, onRemoved) => {
     let lastSeenElement = null;
     const observer = new MutationObserver((_mutations) => {
       const element = document.querySelector(selector);
@@ -237,7 +237,7 @@
     select.addEventListener('change', async () => {
       log('[quick stock pricer] changed items per page');
 
-      waitForPaginationElement('.np-pagination-controls', async (paginationControls) => {
+      waitForDomElement('.np-pagination-controls', async (paginationControls) => {
         // Cancel previous listener if pagination was reinserted
         if (paginationAbortController) {
           paginationAbortController.abort();
@@ -262,6 +262,15 @@
         await applyItemPricing();
       });
     });
+  });
+
+  /**
+   * Submitting the quick stock form triggers a replacement of the DOM node.
+   * This will wipe all the existing price UI. Reapply item pricing once the response returns.
+   */
+  waitForDomElement('#quickstock-table-form', async (_form) => {
+    log('[quick stock pricer] form reloaded after submission');
+    await applyItemPricing();
   });
 
   // Run on first page load

@@ -124,7 +124,7 @@
       
       // Since the table rows are constantly erasing item pricing due to organization actions:
       // pagination, stacking, etc. We should apply the item data we have to the new table view
-      waitForElement('form table.quickstock-table tbody.np-table-tbody').then((tbody) => {
+      waitForElement('form table.quickstock-table tbody.np-table-tbody').then(async (tbody) => {
         const rows = tbody.querySelectorAll('tr');
         log('[quick stock pricer] row length', rows.length);
         // Target rows without pricing and apply our existing data to those affected rows:
@@ -147,16 +147,26 @@
             const itemName = span.childNodes[0].textContent.trim();
 
             if (itemName && itemName !== ' ') {
-              const isInflated = itemData[itemName]?.price.inflated;
-              const itemPrice = itemData[itemName]?.price.value;
+              let isInflated = itemData[itemName]?.price.inflated;
+              let itemPrice = itemData[itemName]?.price.value;
 
-              if (itemPrice) {
-                itemCell.className += ' flex justify-between';
-                const spanPrice = document.createElement('span');
-                spanPrice.textContent = itemPrice;
-                spanPrice.className = `item-price font-bold ${isInflated ? 'text-red-500' : ''}`;
-                itemCell.append(spanPrice);
+              // When another page loads in, it might bring with it new items which we don't have
+              // a price for yet so we need to update our pricing itemData
+              if (!itemPrice) {
+                await gatherItemNames();
+                const responseData = await fetchItemPriceHistory(itemNames);
+                itemData = { ...itemData, ...responseData };
+                log('[quick stock pricer] fill in missing item data', itemData);
+                // Now prices should be available for the item you want priced...
+                isInflated = itemData[itemName]?.price.inflated;
+                itemPrice = itemData[itemName]?.price.value;
               }
+
+              itemCell.className += ' flex justify-between';
+              const spanPrice = document.createElement('span');
+              spanPrice.textContent = itemPrice || '??';
+              spanPrice.className = `item-price font-bold ${isInflated ? 'text-red-500' : ''}`;
+              itemCell.append(spanPrice);
             }
           }
         }

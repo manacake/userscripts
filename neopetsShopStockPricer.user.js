@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Neopets Shop Stock Pricer
-// @version      1.1.0
+// @version      2.0.0
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  For use on the user's shop stock page: queries the latest price of an item and displays it so the user can adjust their prices accordingly.
@@ -18,7 +18,7 @@
 (async function() {
   'use strict';
 
-  const possibleShopStockPage = document.querySelector('td.content p');
+  const possibleShopStockPage = document.querySelector('.mkt-subnav__link.is-active').textContent === 'Shop Stock';
   if (!possibleShopStockPage) return;
 
   // Helper to fetch item price from itemdb's API using GM_xmlhttpRequest to bypass CORS
@@ -52,56 +52,46 @@
     });
   };
 
-  // Sanity checking if we're on a user's shop stock page
-  if (possibleShopStockPage.textContent.includes('When you sell an item, the Neopoints will go into your')) {
-    const table = document.querySelector('form table');
-    const rows = table.querySelectorAll('tr');
-    
-    // Some users might have their pin security enabled which will require logic adjustments
-    const isPinEnabled = !!table.querySelector('input[name="pin"]');
-    const listLengthAdjustment = isPinEnabled ? 3 : 1; 
-    const names = [];
+  const table = document.querySelector('form table.market-your-table');
+  const rows = table.querySelectorAll('tr');
+  const names = [];
 
-    // Add a new column: Price History to the header row
-    const headerCell = document.createElement('td');
-    headerCell.setAttribute('align', 'center');
-    headerCell.setAttribute('bgcolor', '#dddd77');
-    headerCell.innerHTML = '<b>Price History</b>';
-    rows[0].cells[3].insertAdjacentElement('afterend', headerCell);
+  // Add a new column: Price History to the header row
+  const headerCell = document.createElement('th');
+  headerCell.setAttribute('class', 'py-3 px-4 market-your__col-history');
+  headerCell.setAttribute('style', 'width: auto;');
+  headerCell.innerHTML = 'Price History';
+  // Insert after "Stock" column
+  rows[0].cells[2].insertAdjacentElement('afterend', headerCell);
 
-    // Grab item names to fetch price check
-    for (let i = 1; i < rows.length - listLengthAdjustment; i++) {
+  // Grab item names to fetch price check
+  // i starts at 1 to skip header row
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const itemName = row.querySelector('.market-your-item__name').textContent.trim();
+    if (!names.includes(itemName)) names.push(itemName);
+  }
+
+  try {
+    const data = await fetchItemPriceHistory(names);
+
+    // Update the item rows to include historical pricing
+    for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      const itemName = row.cells[0].textContent.trim();
-      if (!names.includes(itemName)) names.push(itemName);
+      const itemName = row.querySelector('.market-your-item__name').textContent.trim();
+      const newCell = document.createElement('td');
+
+      const itemData = data[itemName];
+      const isInflated = itemData?.price?.inflated;
+      const itemPrice = itemData?.price?.value;
+      const styleAttr = isInflated ? 'style="color: red;"' : '';
+
+      newCell.setAttribute('class', 'py-3 px-4 text-left');
+      newCell.innerHTML = `<span ${styleAttr}><b>${itemPrice ?? '??'}</b></span>`;
+      row.cells[2].insertAdjacentElement('afterend', newCell);
     }
-
-    try {
-      const data = await fetchItemPriceHistory(names);
-
-      // Update the item rows to include historical pricing
-      for (let i = 1; i < rows.length - listLengthAdjustment; i++) {
-        const row = rows[i];
-        const itemName = row.cells[0].textContent.trim();
-        const newCell = document.createElement('td');
-        
-        const itemData = data[itemName];
-        const isInflated = itemData?.price?.inflated;
-        const itemPrice = itemData?.price?.value;
-        const styleAttr = isInflated ? 'style="color: red;"' : '';
-        
-        newCell.setAttribute('align', 'center');
-        newCell.setAttribute('bgcolor', '#ffffcc');
-        newCell.innerHTML = `<span ${styleAttr}><b>${itemPrice ?? '??'}</b></span>`;
-        row.cells[3].insertAdjacentElement('afterend', newCell);
-      }
-
-      // Fix colspans for the footer rows
-      if (isPinEnabled) rows[rows.length - 3].querySelector('td').setAttribute('colspan', '8');
-      rows[rows.length - 1].querySelector('td').setAttribute('colspan', '8');
-
-    } catch (error) {
-      console.error("Failed to update shop prices:", error);
-    }
+  }
+  catch (error) {
+    console.error("Failed to update shop prices:", error);
   }
 })();

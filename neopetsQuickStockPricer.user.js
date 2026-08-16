@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Neopets Quick Stock Pricer
-// @version      4.1.0
+// @version      4.1.1
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  For use on the user's quick stock page: queries the latest price of an item and displays it
@@ -151,15 +151,20 @@
               let itemPrice = itemData[itemName]?.price.value;
 
               // When another page loads in, it might bring with it new items which we don't have
-              // a price for yet so we need to update our pricing itemData
+              // a price for yet so we need to update our pricing itemData...
+              // However, if an item genuinely has no price (null), we want to bypass this additional price fetch
               if (!itemPrice) {
+                const previousItemNamesCount = itemNames.length;
                 await gatherItemNames();
-                const responseData = await fetchItemPriceHistory(itemNames);
-                itemData = { ...itemData, ...responseData };
-                log('[quick stock pricer] fill in missing item data', itemData);
-                // Now prices should be available for the item you want priced...
-                isInflated = itemData[itemName]?.price.inflated;
-                itemPrice = itemData[itemName]?.price.value;
+                const currentItemNamesCount = itemNames.length;
+                if (previousItemNamesCount !== currentItemNamesCount) {
+                  const responseData = await fetchItemPriceHistory(itemNames);
+                  itemData = { ...itemData, ...responseData };
+                  log('[quick stock pricer] fill in missing item data', itemData);
+                  // Now prices should be available for the item you want priced...
+                  isInflated = itemData[itemName]?.price.inflated;
+                  itemPrice = itemData[itemName]?.price.value;
+                }
               }
 
               itemCell.className += ' flex justify-between';

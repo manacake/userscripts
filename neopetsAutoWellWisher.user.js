@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Neopets Auto Well Wisher
-// @version      1.0.0
+// @version      1.0.1
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  Prefills wishing well inputs and submits them automatically up to the max amount of wishes
@@ -27,6 +27,18 @@
     }
   }
 
+  const displayNotice = (note) => {
+    const imgElement = document.querySelector('img[src*="wishingwell.gif"]');
+    const notice = document.createElement('p');
+
+    if (imgElement) {
+      notice.textContent = note;
+      notice.style.fontWeight = 'bold';
+      notice.style.color = 'tomato';
+      imgElement.insertAdjacentElement('afterend', notice);
+    }
+  }
+
   // 7 wishes are valid every 12 hours
   let isMaxWishReached = false;
   let isWishStateOpen = false;
@@ -41,6 +53,7 @@
       log(`[auto well wisher] wish count value: ${wishCountValue}`);
 
       if (wishCountValue <= MAX_WISH_AMOUNT) {
+        displayNotice('Processing wish...');
         isWishStateOpen = true;
         // Must donate a minimum of 21 NP for wish to be eligible to be granted.
         document.querySelector('input[name="donation"]').setAttribute('value', MIN_DONATION_AMOUNT);
@@ -58,14 +71,6 @@
   
   if (isMaxWishReached && !isWishStateOpen) {
     log('[auto well wisher] max amount of wishes submitted');
-    const imgElement = document.querySelector('img[src*="wishingwell.gif"]');
-    const notice = document.createElement('p');
-
-    if (imgElement) {
-      notice.textContent = 'Max wishes reached';
-      notice.style.fontWeight = 'bold';
-      notice.style.color = 'tomato';
-      imgElement.insertAdjacentElement('afterend', notice);
-    }
+    displayNotice('Max wishes reached');
   }
 })();

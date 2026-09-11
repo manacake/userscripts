@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Neopets Shop Stock Pricer
-// @version      2.0.0
+// @version      2.1.0
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  For use on the user's shop stock page: queries the latest price of an item and displays it so the user can adjust their prices accordingly.
@@ -17,9 +17,16 @@
 
 (async function() {
   'use strict';
+  const DEBUG = false; // Set to true if you want to see console logs
 
   const possibleShopStockPage = document.querySelector('.mkt-subnav__link.is-active').textContent === 'Shop Stock';
   if (!possibleShopStockPage) return;
+
+  const log = (...args) => {
+    if (DEBUG) {
+      console.log(...args);
+    }
+  }
 
   // Helper to fetch item price from itemdb's API using GM_xmlhttpRequest to bypass CORS
   const fetchItemPriceHistory = (names) => {
@@ -52,9 +59,28 @@
     });
   };
 
+  const updateItemRowsWithPricing = (rows) => {
+    // Update the item rows to include historical pricing
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const itemName = row.querySelector('.market-your-item__name').textContent.trim();
+      const newCell = document.createElement('td');
+
+      const itemData = data[itemName];
+      const isInflated = itemData?.price?.inflated;
+      const itemPrice = itemData?.price?.value;
+      const styleAttr = isInflated ? 'style="color: red;"' : '';
+
+      newCell.setAttribute('class', 'historical-price py-3 px-4 text-left');
+      newCell.innerHTML = `<span ${styleAttr}><b>${itemPrice ?? '??'}</b></span>`;
+      row.cells[2].insertAdjacentElement('afterend', newCell);
+    }
+  }
+
   const table = document.querySelector('form table.market-your-table');
   const rows = table.querySelectorAll('tr');
   const names = [];
+  let data = {};
 
   // Add a new column: Price History to the header row
   const headerCell = document.createElement('th');
@@ -73,25 +99,27 @@
   }
 
   try {
-    const data = await fetchItemPriceHistory(names);
-
-    // Update the item rows to include historical pricing
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      const itemName = row.querySelector('.market-your-item__name').textContent.trim();
-      const newCell = document.createElement('td');
-
-      const itemData = data[itemName];
-      const isInflated = itemData?.price?.inflated;
-      const itemPrice = itemData?.price?.value;
-      const styleAttr = isInflated ? 'style="color: red;"' : '';
-
-      newCell.setAttribute('class', 'py-3 px-4 text-left');
-      newCell.innerHTML = `<span ${styleAttr}><b>${itemPrice ?? '??'}</b></span>`;
-      row.cells[2].insertAdjacentElement('afterend', newCell);
-    }
+    data = await fetchItemPriceHistory(names);
+    updateItemRowsWithPricing(rows);
   }
   catch (error) {
     console.error("Failed to update shop prices:", error);
   }
+
+  /**
+   * During form submission, a row may be removed and cause stale data. When
+   * row is removed, it doesn't reload the form or replace it in the DOM. The
+   * rows get patched in place.
+   */
+  const rowsObserver = new MutationObserver(() => {
+    log('[shop stock pricer] table rows changed, refreshing price column');
+    // Guard to prevent triggering rowsObserver from our edits
+    rowsObserver.disconnect();
+    // Remove the possibly outdated price data (e.g. row was removed, but the pricing cell stays)
+    document.querySelectorAll('.historical-price').forEach(cell => cell.remove());
+    // Re-add the historical pricing in the correct row cells
+    updateItemRowsWithPricing(table.querySelectorAll('tr'));
+    rowsObserver.observe(table, { childList: true, subtree: true }); // Re-enable mutation observing
+  });
+  rowsObserver.observe(table, { childList: true, subtree: true });
 })();

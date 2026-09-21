@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Neopets Shop Stock Pricer
-// @version      2.1.0
+// @version      2.1.1
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  For use on the user's shop stock page: queries the latest price of an item and displays it so the user can adjust their prices accordingly.
@@ -27,6 +27,10 @@
       console.log(...args);
     }
   }
+
+  const formatPrice = (value) => {
+    return typeof value === 'number' ? value.toLocaleString('en-US') : '??';
+  };
 
   // Helper to fetch item price from itemdb's API using GM_xmlhttpRequest to bypass CORS
   const fetchItemPriceHistory = (names) => {
@@ -72,7 +76,7 @@
       const styleAttr = isInflated ? 'style="color: red;"' : '';
 
       newCell.setAttribute('class', 'historical-price py-3 px-4 text-left');
-      newCell.innerHTML = `<span ${styleAttr}><b>${itemPrice ?? '??'}</b></span>`;
+      newCell.innerHTML = `<span ${styleAttr}><b>${formatPrice(itemPrice) ?? '??'}</b></span>`;
       row.cells[2].insertAdjacentElement('afterend', newCell);
     }
   }

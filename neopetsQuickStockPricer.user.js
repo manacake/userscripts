@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Neopets Quick Stock Pricer
-// @version      4.1.1
+// @version      4.1.2
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  For use on the user's quick stock page: queries the latest price of an item and displays it
@@ -26,6 +26,10 @@
       console.log(...args);
     }
   }
+
+  const formatPrice = (value) => {
+    return typeof value === 'number' ? value.toLocaleString('en-US') : '??';
+  };
 
   // Helper to wait for page elements to be hydrated
   const waitForElement = (selector) => {
@@ -169,7 +173,7 @@
 
               itemCell.className += ' flex justify-between';
               const spanPrice = document.createElement('span');
-              spanPrice.textContent = itemPrice || '??';
+              spanPrice.textContent = formatPrice(itemPrice) || '??';
               spanPrice.className = `item-price font-bold ${isInflated ? 'text-red-500' : ''}`;
               itemCell.append(spanPrice);
             }

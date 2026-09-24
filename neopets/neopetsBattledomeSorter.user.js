@@ -6,8 +6,8 @@
 // @description  Adds name and difficulty sorting controls to the battledome challenger list
 // @license      CC-BY-NC-4.0
 // @website      https://manacake.co
-// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/neopetsBattledomeSorter.user.js
-// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/neopetsBattledomeSorter.user.js
+// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/neopets/neopetsBattledomeSorter.user.js
+// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/neopets/neopetsBattledomeSorter.user.js
 // @match        *://*.neopets.com/dome/fight.phtml*
 // @icon         https://manacake.co/favicon.ico
 // @noframes

@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Line Sticker Downloader
-// @version      1.0.2
+// @version      1.0.3
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  Downloads the page's stickers in a .zip file
 // @license      CC-BY-NC-4.0
 // @website      https://manacake.co
-// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/lineStickerDownloader.user.js
-// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/lineStickerDownloader.user.js
+// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/line/lineStickerDownloader.user.js
+// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/line/lineStickerDownloader.user.js
 // @match        *://store.line.me/stickershop/product/*/en*
 // @icon         https://manacake.co/favicon.ico
 // @grant        none

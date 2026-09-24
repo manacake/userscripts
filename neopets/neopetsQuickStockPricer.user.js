@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Neopets Quick Stock Pricer
-// @version      4.1.2
+// @version      4.1.3
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  For use on the user's quick stock page: queries the latest price of an item and displays it
 // @license      CC-BY-NC-4.0
 // @website      https://manacake.co
-// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/neopetsQuickStockPricer.user.js
-// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/neopetsQuickStockPricer.user.js
+// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/neopets/neopetsQuickStockPricer.user.js
+// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/neopets/neopetsQuickStockPricer.user.js
 // @match        *://*.neopets.com/quickstock.phtml*
 // @icon         https://manacake.co/favicon.ico
 // @grant        GM_xmlhttpRequest

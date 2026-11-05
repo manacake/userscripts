@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Neopets Battledome Challenger Sorter
-// @version      1.0.0
+// @version      1.1.0
 // @author       manacake.co
 // @namespace    manacake.co
 // @description  Adds name and difficulty sorting controls to the battledome challenger list
 // @license      CC-BY-NC-4.0
 // @website      https://manacake.co
-// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/neopets/neopetsBattledomeSorter.user.js
-// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/neopets/neopetsBattledomeSorter.user.js
+// @updateURL    https://raw.githubusercontent.com/manacake/userscripts/main/neopets/neopetsBattledomeChallengerSorter.user.js
+// @downloadURL  https://raw.githubusercontent.com/manacake/userscripts/main/neopets/neopetsBattledomeChallengerSorter.user.js
 // @match        *://*.neopets.com/dome/fight.phtml*
 // @icon         https://manacake.co/favicon.ico
 // @noframes
@@ -57,13 +57,13 @@
 
   const initialize = () => {
     const table = document.querySelector('#npcTable');
-    if (!table || table.dataset.battledomeSorterInitialized) return;
+    if (!table || table.dataset.battledomeSorterChallengerInitialized) return;
 
     const nameHeader = table.querySelector('th.name');
     const difficultyHeader = table.querySelector('th.diff');
     if (!nameHeader || !difficultyHeader) return;
 
-    table.dataset.battledomeSorterInitialized = 'true';
+    table.dataset.battledomeSorterChallengerInitialized = 'true';
     const style = document.createElement('style');
     style.textContent = `
       #npcTable .battledome-sort-button {
